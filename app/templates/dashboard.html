@@ -4,8 +4,13 @@
 
 {% block content %}
 <div class="card">
-    <h2>Real-time Cryptocurrency Prices</h2>
-    <p class="text-muted" style="margin-bottom: 20px;">Prices are updated every minute</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+        <div>
+            <h2 class="mb-0">Real-time Cryptocurrency Prices</h2>
+            <p class="text-muted" style="margin-top: 5px; margin-bottom: 0;">Prices are updated daily at midnight (UTC). Use the button to manually refresh.</p>
+        </div>
+        <button onclick="refreshPrices()" class="btn btn-secondary btn-sm" id="refresh-btn">Refresh Prices</button>
+    </div>
     
     <div class="price-grid">
         {% for item in prices %}
@@ -20,13 +25,18 @@
         </div>
         {% endfor %}
     </div>
+    
+    <div id="refresh-status" style="margin-top: 15px; display: none;" class="text-center"></div>
 </div>
 
 {% if user %}
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
         <h2 class="mb-0">My Price Alerts</h2>
-        <a href="{{ url_for('alerts.create_alert') }}" class="btn btn-primary btn-sm">+ Create Alert</a>
+        <div>
+            <button onclick="checkAlerts()" class="btn btn-secondary btn-sm" id="check-btn">Check Alerts</button>
+            <a href="{{ url_for('alerts.create_alert') }}" class="btn btn-primary btn-sm">+ Create Alert</a>
+        </div>
     </div>
     
     {% if alerts %}
@@ -68,6 +78,8 @@
         You haven't set up any price alerts yet. <a href="{{ url_for('alerts.create_alert') }}">Create your first alert</a>
     </p>
     {% endif %}
+    
+    <div id="check-status" style="margin-top: 15px; display: none;" class="text-center"></div>
 </div>
 {% else %}
 <div class="card text-center">
@@ -77,4 +89,68 @@
     <a href="{{ url_for('auth.register') }}" class="btn btn-secondary">Register</a>
 </div>
 {% endif %}
+
+<script>
+function refreshPrices() {
+    const btn = document.getElementById('refresh-btn');
+    const status = document.getElementById('refresh-status');
+    
+    btn.disabled = true;
+    btn.textContent = 'Refreshing...';
+    status.style.display = 'block';
+    status.innerHTML = '<span class="text-muted">Fetching latest prices...</span>';
+    
+    fetch('/api/cron/collect-data', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                status.innerHTML = '<span style="color: #155724;">✓ Prices updated successfully! Refreshing page...</span>';
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                status.innerHTML = '<span style="color: #721c24;">✗ Failed: ' + data.error + '</span>';
+                btn.disabled = false;
+                btn.textContent = 'Refresh Prices';
+            }
+        })
+        .catch(error => {
+            status.innerHTML = '<span style="color: #721c24;">✗ Error: ' + error.message + '</span>';
+            btn.disabled = false;
+            btn.textContent = 'Refresh Prices';
+        });
+}
+
+function checkAlerts() {
+    const btn = document.getElementById('check-btn');
+    const status = document.getElementById('check-status');
+    
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+    status.style.display = 'block';
+    status.innerHTML = '<span class="text-muted">Analyzing alerts...</span>';
+    
+    fetch('/api/cron/analyze-data', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let msg = '✓ Checked ' + data.alerts_checked + ' alerts, triggered ' + data.alerts_triggered;
+                if (data.alerts_triggered > 0) {
+                    msg += ' (email sent!)';
+                }
+                status.innerHTML = '<span style="color: #155724;">' + msg + '</span>';
+                if (data.alerts_triggered > 0) {
+                    setTimeout(() => location.reload(), 2000);
+                }
+            } else {
+                status.innerHTML = '<span style="color: #721c24;">✗ Failed: ' + data.error + '</span>';
+            }
+            btn.disabled = false;
+            btn.textContent = 'Check Alerts';
+        })
+        .catch(error => {
+            status.innerHTML = '<span style="color: #721c24;">✗ Error: ' + error.message + '</span>';
+            btn.disabled = false;
+            btn.textContent = 'Check Alerts';
+        });
+}
+</script>
 {% endblock %}

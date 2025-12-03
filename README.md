@@ -8,7 +8,10 @@ CryptoAlert is a web-based automated price monitoring and alert service designed
 - Real-time cryptocurrency price display (BTC, ETH, BNB, XRP, ADA, SOL, DOGE)
 - Custom price alert rules (trigger when price goes above/below threshold)
 - Email notification system (automatic alerts when triggered)
-- Scheduled data collection and analysis (updates every minute)
+- Scheduled data collection and analysis (daily at midnight UTC)
+- **Manual trigger buttons** for testing price refresh and alert checking
+
+> **Note**: Due to Vercel Hobby plan limitations, cron jobs can only run once per day. Manual trigger buttons have been added to the dashboard for on-demand testing and immediate price updates.
 
 ## Tech Stack
 
@@ -91,9 +94,9 @@ pytest tests/test_integration.py
 - `POST /alerts/delete/<id>` - Delete alert
 - `POST /alerts/toggle/<id>` - Toggle alert status
 
-### Cron Jobs (Triggered by Vercel)
-- `GET/POST /api/cron/collect-data` - Collect price data
-- `GET/POST /api/cron/analyze-data` - Analyze and trigger alerts
+### Cron Jobs
+- `GET/POST /api/cron/collect-data` - Collect price data (auto: daily at 00:00 UTC, manual: via dashboard button)
+- `GET/POST /api/cron/analyze-data` - Analyze and trigger alerts (auto: daily at 00:00 UTC, manual: via dashboard button)
 
 ## Project Structure
 
