@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit Alert' if alert else 'Create Alert' }} - CryptoAlert{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 0 auto;">
+    <h2>{{ 'Edit Alert Rule' if alert else 'Create Alert Rule' }}</h2>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="currency">Cryptocurrency</label>
+            <select id="currency" name="currency" required>
+                <option value="">-- Select --</option>
+                {% for coin_id, symbol in currencies.items() %}
+                <option value="{{ symbol }}" {% if alert and alert.currency_symbol == symbol %}selected{% endif %}>
+                    {{ symbol }} - {{ coin_id.capitalize() }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="condition">Trigger Condition</label>
+            <select id="condition" name="condition" required>
+                <option value="">-- Select --</option>
+                <option value=">" {% if alert and alert.condition == '>' %}selected{% endif %}>Price Above</option>
+                <option value="<" {% if alert and alert.condition == '<' %}selected{% endif %}>Price Below</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="threshold">Threshold Price (USD)</label>
+            <input type="number" id="threshold" name="threshold" step="0.01" min="0.01" required 
+                   placeholder="e.g., 50000.00"
+                   value="{{ alert.threshold_price if alert else '' }}">
+        </div>
+        
+        {% if alert %}
+        <div class="form-group">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" name="is_active" {% if alert.is_active %}checked{% endif %} 
+                       style="width: auto; margin-right: 8px;">
+                Enable this alert
+            </label>
+        </div>
+        {% endif %}
+        
+        <div class="form-group" style="margin-top: 20px;">
+            <button type="submit" class="btn btn-primary">{{ 'Save Changes' if alert else 'Create Alert' }}</button>
+            <a href="{{ url_for('alerts.list_alerts') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
